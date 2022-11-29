@@ -1,6 +1,7 @@
 import tensorflow as tf
 import numpy as np
 from accuracy import SongAccuracy
+from preprocessing import preprocess
 from preprocessing import get_data
 from types import SimpleNamespace
 
@@ -47,7 +48,7 @@ class MyRNN(tf.keras.Model):
 
     ##########################################################################################
 
-    def generate_sentence(self, word1, length, vocab, sample_n=10):
+    def generate_song_id(self, word1, length, vocab, sample_n=10):
         """
         Takes a model, vocab, selects from the most likely next word from the model's distribution
         """
@@ -63,10 +64,10 @@ class MyRNN(tf.keras.Model):
             logits = np.array(logits[0,0,:])
             top_n = np.argsort(logits)[-sample_n:]
             n_logits = np.exp(logits[top_n])/np.exp(logits[top_n]).sum()
-            out_index = np.random.choice(top_n,p=n_logits)
+            out_song_id = np.random.choice(top_n,p=n_logits)
 
-            text.append(reverse_vocab[out_index])
-            next_input = [[out_index]]
+            text.append(reverse_vocab(out_song_id))
+            next_input = [[out_song_id]]
 
         print(" ".join(text))
 
@@ -90,7 +91,7 @@ def get_text_model(vocab):
 
     ## TODO: Compile your model using your choice of optimizer, loss, and metrics
     model.compile(
-        optimizer=tf.optimizers.Adam(learning_rate = 0.0025), 
+        optimizer=tf.optimizers.Adam(learning_rate = 0.005), 
         loss=loss_metric, 
         metrics=[acc_metric],
     )
@@ -98,23 +99,17 @@ def get_text_model(vocab):
     return SimpleNamespace(
         model = model,
         epochs = 1,
-        batch_size = 200,
+        batch_size = 100,
     )
 
-
+    
 
 #########################################################################################
 
 def main():
 
-    ## TODO: Pre-process and vectorize the data
-    ##   HINT: Please note that you are predicting the next word at each timestep, so you want to remove the last element
-    ##   from train_x and test_x. You also need to drop the first element from train_y and test_y.
-    ##   If you don't do this, you will see very, very small perplexities.
-    ##   HINT: You might be able to find this somewhere...
-    train, test, vocab = get_data("../data/train.txt", "../data/test.txt")
-    window_size = 20
-
+    
+    train, test, vocab = preprocess(train_filepath='../data_info/data/mpd.slice.0-999.json', test_filepath='../data_info/data/mpd.slice.1000-1999.json')
 
     train = np.array(train)
     test  = np.array(test)
@@ -130,11 +125,8 @@ def main():
     np.reshape(X0, (-1, 20))
     np.reshape(X1, (-1, 20))
     np.reshape(Y0, (-1, 20))
-    np.reshape(Y1, (-1, 20))
-    
+    np.reshape(Y1, (-1, 20))    
 
-
-    # TODO: Get your model that you'd like to use
     args = get_text_model(vocab)
 
     args.model.fit(
@@ -144,10 +136,7 @@ def main():
         validation_data=(X1, Y1)
     )
 
-    ## Feel free to mess around with the word list to see the model try to generate sentences
-    for word1 in 'speak to this brown deep learning student'.split():
-        if word1 not in vocab: print(f"{word1} not in vocabulary")            
-        else: args.model.generate_sentence(word1, 20, vocab, 10)
+
 
 if __name__ == '__main__':
     main()
