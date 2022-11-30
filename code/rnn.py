@@ -114,7 +114,7 @@ def main():
     ##   from train_x and test_x. You also need to drop the first element from train_y and test_y.
     ##   If you don't do this, you will see very, very small perplexities.
     ##   HINT: You might be able to find this somewhere...
-    train_id, test_id, vocab = preprocess("../data/train.txt", "../data/test.txt")
+    train_id, test_id, vocab, relevance = preprocess("../data/train.txt", "../data/test.txt")
 
     train_id = np.array(train_id)
     test_id  = np.array(test_id)    
