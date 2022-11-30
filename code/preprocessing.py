@@ -1,6 +1,8 @@
 import json
 import numpy as np
 import random
+from collections import defaultdict
+
 
 def preprocess(train_filepath='data_info/data/', test_filepath='data_info/data/', k=10000):
 
@@ -18,10 +20,14 @@ def preprocess(train_filepath='data_info/data/', test_filepath='data_info/data/'
     train_playlists = train_data['playlists']
     all_train_tracks = []
 
+    # create relevance metrics
+    relevance = defaultdict(lambda: defaultdict(int))
+
     for playlist in train_playlists:
         playlist_tracks = playlist['tracks']
         track_names = [x['track_name'] for x in playlist_tracks]
         # track_names.append('<BREAK>')
+
         all_train_tracks = all_train_tracks + track_names
 
     unique_tracks = sorted(set(all_train_tracks))
@@ -47,15 +53,32 @@ def preprocess(train_filepath='data_info/data/', test_filepath='data_info/data/'
 
     test_tracks = [track_to_id[x] for x in all_test_tracks]
 
-    print(train_tracks[:10])
-    print(test_tracks[:10])
-    return train_tracks, test_tracks, track_to_id
+    # print(train_tracks[:10])
+    # print(test_tracks[:10])
+    # print(len(train_tracks), len(test_tracks))
+
+    # generate relevance scores
+    # relevance maps song id --> every song it appears in a playlist with --> number of times they appear together
+    relevance = defaultdict(lambda: defaultdict(lambda: 0))
+
+    for playlist in train_playlists:
+        playlist_tracks = playlist['tracks']
+        track_names = [x['track_name'] for x in playlist_tracks]
+        for idx, track1 in enumerate(track_names):
+            id1 = str(track_to_id[track1])
+            for track2 in track_names[idx:]:
+                id2 = str(track_to_id[track2])
+                relevance[id1][id2] += 1
+                relevance[id2][id1] += 1
 
 
+    relevance_output = {}
+    for song in relevance.keys():
+        kv_list = [(k, v) for (k, v) in relevance[song].items()]
+        kv_list.sort(key=lambda x: x[1])
+        relevance_output[song] = [x[0] for x in kv_list]
 
-
-def randomly_sample(inputs, k):
-    return random.choices(inputs, k=k)
+    return train_tracks, test_tracks, track_to_id, relevance_output
 
 
 if __name__ == "__main__":
