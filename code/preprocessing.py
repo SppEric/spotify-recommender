@@ -58,5 +58,5 @@ def randomly_sample(inputs, k):
     return random.choices(inputs, k=k)
 
 
-if __name__ == "__main__":
-    preprocess(train_filepath='../data_info/data/mpd.slice.0-999.json', test_filepath='../data_info/data/mpd.slice.1000-1999.json')
+# if __name__ == "__main__":
+#     preprocess(train_filepath='../data_info/data/mpd.slice.0-999.json', test_filepath='../data_info/data/mpd.slice.1000-1999.json')

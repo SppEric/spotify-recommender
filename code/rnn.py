@@ -2,7 +2,6 @@ import tensorflow as tf
 import numpy as np
 from accuracy import SongAccuracy
 from preprocessing import preprocess
-from preprocessing import get_data
 from types import SimpleNamespace
 
 
@@ -41,7 +40,7 @@ class MyRNN(tf.keras.Model):
         """
         ## TODO: Implement the method as necessary
 
-        words = self.embedding(np.array(inputs))
+        words = self.embedding(inputs)
         inputs = self.gru(words)
         inputs = self.model(inputs) 
         return inputs
