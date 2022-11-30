@@ -4,12 +4,13 @@ from accuracy import SongAccuracy
 from preprocessing import preprocess
 from types import SimpleNamespace
 
+window_size = 20
 
 class MyRNN(tf.keras.Model):
 
     ##########################################################################################
 
-    def __init__(self, vocab_size, rnn_size=256, embed_size=128):
+    def __init__(self, vocab_size, rnn_size=128, embed_size=64):
         """
         The Model class predicts the next words in a sequence.
         : param vocab_size : The number of unique words in the data
@@ -28,10 +29,13 @@ class MyRNN(tf.keras.Model):
         ## Define a recurrent component to reason with the sequence of data. 
         ## You may also want a dense layer near the end...    
         self.embedding = tf.keras.layers.Embedding(self.vocab_size, self.embed_size)
-        self.model = tf.keras.Sequential()
-        self.gru = tf.keras.layers.LSTM(self.rnn_size, dropout=0.1, return_sequences=True) 
-        ##tf.keras.layers.GRU(self.rnn_size, return_sequences=True) 
-        self.model.add(tf.keras.layers.Dense(self.vocab_size, "softmax"))
+        self.lstm = tf.keras.layers.LSTM(self.embed_size, return_sequences=True, return_state=False)
+        self.model = tf.keras.Sequential(
+            [       
+                tf.keras.layers.Dense(10 * self.embed_size, activation='relu'),
+                tf.keras.layers.Dense(self.vocab_size, activation='softmax')
+            ]
+        )
 
     def call(self, inputs):
         """
@@ -39,15 +43,16 @@ class MyRNN(tf.keras.Model):
         - You must use an LSTM or GRU as the next layer.
         """
         ## TODO: Implement the method as necessary
-
-        words = self.embedding(inputs)
-        inputs = self.gru(words)
-        inputs = self.model(inputs) 
-        return inputs
+        x = self.embedding(inputs)
+        x = self.lstm(x)
+        
+        # Send to sequence
+        x = self.model(x)
+        return x
 
     ##########################################################################################
 
-    def generate_song_id(self, word1, length, vocab, sample_n=10):
+    def generate_sentence(self, word1, length, vocab, sample_n=10):
         """
         Takes a model, vocab, selects from the most likely next word from the model's distribution
         """
@@ -55,7 +60,7 @@ class MyRNN(tf.keras.Model):
 
         first_string = word1
         first_word_index = vocab[word1]
-        next_input = [[first_word_index]]
+        next_input = np.array(first_word_index).reshape((1,1))
         text = [first_string]
 
         for i in range(length):
@@ -63,12 +68,12 @@ class MyRNN(tf.keras.Model):
             logits = np.array(logits[0,0,:])
             top_n = np.argsort(logits)[-sample_n:]
             n_logits = np.exp(logits[top_n])/np.exp(logits[top_n]).sum()
-            out_song_id = np.random.choice(top_n,p=n_logits)
+            out_index = np.random.choice(top_n,p=n_logits)
 
-            text.append(reverse_vocab(out_song_id))
-            next_input = [[out_song_id]]
+            text.append(reverse_vocab[out_index])
+            next_input = np.array(out_index).reshape((1,1))
 
-        print(" ".join(text))
+        print(", ".join(text))
 
 
 #########################################################################################
@@ -84,13 +89,12 @@ def get_text_model(vocab):
     model = MyRNN(len(vocab))
 
     ## TODO: Define your own loss and metric for your optimizer
-    loss_metric = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=False) 
-
-    acc_metric = SongAccuracy
+    loss_metric = tf.keras.losses.SparseCategoricalCrossentropy()
+    acc_metric  = SongAccuracy()
 
     ## TODO: Compile your model using your choice of optimizer, loss, and metrics
     model.compile(
-        optimizer=tf.optimizers.Adam(learning_rate = 0.005), 
+        optimizer=tf.keras.optimizers.Adam(0.006), 
         loss=loss_metric, 
         metrics=[acc_metric],
     )
@@ -101,31 +105,33 @@ def get_text_model(vocab):
         batch_size = 100,
     )
 
-    
-
 #########################################################################################
 
 def main():
 
-    
-    train, test, vocab = preprocess(train_filepath='../data_info/data/mpd.slice.0-999.json', test_filepath='../data_info/data/mpd.slice.1000-1999.json')
+    ## TODO: Pre-process and vectorize the data
+    ##   HINT: Please note that you are predicting the next word at each timestep, so you want to remove the last element
+    ##   from train_x and test_x. You also need to drop the first element from train_y and test_y.
+    ##   If you don't do this, you will see very, very small perplexities.
+    ##   HINT: You might be able to find this somewhere...
+    train_id, test_id, vocab = preprocess("../data/train.txt", "../data/test.txt")
 
-    train = np.array(train)
-    test  = np.array(test)
-    X0, Y0 = train[:-1], train[1:]
-    X1, Y1  = test[:-1],  test[1:]
+    train_id = np.array(train_id)
+    test_id  = np.array(test_id)    
+    X0, Y0 = train_id[:-1], train_id[1:]
+    X1, Y1 = test_id[:-1],  test_id[1:]
 
-    ##A LOT OF RESHAPES (20 at end and also maybe 1)
-    X0 = X0[:-(len(X0) % 20)]
-    Y0 = Y0[:-(len(Y0) % 20)]
-    X1 = X1[:-(len(X1) % 20)]
-    Y1 = Y1[:-(len(Y1) % 20)]
+    # Reshape training data into window sized batches
+    X0, Y0 = X0[:-(len(X0) % window_size)], Y0[:-(len(Y0) % window_size)]
+    X0 = X0.reshape(-1, 20)
+    Y0 = Y0.reshape(-1, 20)
 
-    np.reshape(X0, (-1, 20))
-    np.reshape(X1, (-1, 20))
-    np.reshape(Y0, (-1, 20))
-    np.reshape(Y1, (-1, 20))    
+    # Reshape test data into window sized batches
+    X1, Y1 = X1[:-(len(X1) % window_size)], Y1[:-(len(Y1) % window_size)]
+    X1 = X1.reshape(-1, 20)
+    Y1 = Y1.reshape(-1, 20)
 
+    ## TODO: Get your model that you'd like to use
     args = get_text_model(vocab)
 
     args.model.fit(
@@ -135,7 +141,10 @@ def main():
         validation_data=(X1, Y1)
     )
 
-
+    ## Feel free to mess around with the word list to see the model try to generate sentences
+    for word1 in 'speak to this brown deep learning student'.split():
+        if word1 not in vocab: print(f"{word1} not in vocabulary")            
+        else: args.model.generate_sentence(word1, 20, vocab, 10)
 
 if __name__ == '__main__':
     main()
