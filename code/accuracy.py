@@ -11,8 +11,9 @@ class SongAccuracy(tf.keras.losses.SparseCategoricalCrossentropy):
 
 
 class RPrecision(tf.keras.losses):
-    def __init__(self, name='RPrecision', **kwargs):
+    def __init__(self, relevance_dictionary, name='RPrecision', **kwargs):
         super(RPrecision, self).__init__(name=name)
+        self.relevance = relevance_dictionary
 
     def call(self, prediction, truth, *args, **kwargs):
         '''

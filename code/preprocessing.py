@@ -2,9 +2,12 @@ import json
 import numpy as np
 import random
 from collections import defaultdict
+import os
+import shutil
+import csv
 
 
-def preprocess(train_filepath='data_info/data/', test_filepath='data_info/data/', k=10000):
+def preprocess(filepath='../data_info/data/', k=10000):
 
     '''
     preprocess should return:
@@ -81,5 +84,38 @@ def preprocess(train_filepath='data_info/data/', test_filepath='data_info/data/'
     return train_tracks, test_tracks, track_to_id, relevance_output
 
 
+
+def save_data(train, test, track_to_id, relevance, directory='../data_info/saved_preprocessing'):
+    if os.path.exists(directory) and os.path.is_dir(directory):
+        shutil.rmtree(directory)
+
+    os.mkdir(directory)
+    with open('train.csv', 'x') as file:
+        writer = csv.writer(file)
+        writer.writerows(train)
+
+    with open('test.csv', 'x') as file:
+        writer = csv.writer(file)
+        writer.writerows(test)
+
+    with open('test.csv', 'x') as file:
+        fieldnames=["track", "id"]
+        writer = csv.DictWriter(file, fieldnames=fieldnames)
+        for key, value in track_to_id.items():
+            writer.writerow([key, value])
+
+    with open('relevance.csv', 'x') as file:
+        fieldnames=["song", "relevance"]
+        writer = csv.DictWriter(file, fieldnames=fieldnames)
+        for key, value in relevance.items():
+            writer.writerow([key, value])
+
+def get_data
+
+
 if __name__ == "__main__":
-    preprocess(train_filepath='../data_info/data/mpd.slice.0-999.json', test_filepath='../data_info/data/mpd.slice.1000-1999.json')
+    train, test, track, relevance = preprocess(train_filepath='../data_info/data/',
+               test_filepath='../data_info/data/mpd.slice.1000-1999.json', k=2)
+
+    print(train)
+    save_data(train, test, track, relevance)
