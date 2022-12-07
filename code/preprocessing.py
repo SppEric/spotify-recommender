@@ -27,6 +27,16 @@ def preprocess(directory='../data_info/data/', train_test_split=.8, k=None):
     # get train data
     all_train_tracks_name = []
 
+    #Getting size of largest playlist
+    longest_playlist = 0
+    for filepath in train_filepaths:
+        train_file = open(directory + filepath)
+        train_data = json.load(train_file)
+        train_playlists = train_data['playlists']
+        val = len(train_playlists)
+        if val > longest_playlist:
+            longest_playlist = val
+
     for filepath in train_filepaths:
         train_file = open(directory + filepath)
         train_data = json.load(train_file)
@@ -35,6 +45,8 @@ def preprocess(directory='../data_info/data/', train_test_split=.8, k=None):
         for playlist in train_playlists:
             playlist_tracks = playlist['tracks']
             track_names = [x['track_name'] for x in playlist_tracks]
+            while len(track_names) < longest_playlist:
+                track_names.append('<PAD>')
             track_names.append('<BREAK>')
             all_train_tracks_name = all_train_tracks_name + track_names
 
@@ -91,7 +103,7 @@ def preprocess(directory='../data_info/data/', train_test_split=.8, k=None):
         relevance_output[song] = [x[0] for x in kv_list]
 
 
-    return train_tracks_id, test_tracks_id, track_to_id, relevance_output
+    return train_tracks_id, test_tracks_id, track_to_id, relevance_output, longest_playlist
 
 
 if __name__ == "__main__":

@@ -114,22 +114,22 @@ def main():
     ##   from train_x and test_x. You also need to drop the first element from train_y and test_y.
     ##   If you don't do this, you will see very, very small perplexities.
     ##   HINT: You might be able to find this somewhere...
-    train_id, test_id, vocab, relevance = preprocess("../data/train.txt", "../data/test.txt")
+    train_id, test_id, vocab, relevance, lp = preprocess("../data/train.txt", "../data/test.txt")
 
     train_id = np.array(train_id)
     test_id  = np.array(test_id)    
     X0, Y0 = train_id[:-1], train_id[1:]
     X1, Y1 = test_id[:-1],  test_id[1:]
 
-    # Reshape training data into window sized batches
-    X0, Y0 = X0[:-(len(X0) % window_size)], Y0[:-(len(Y0) % window_size)]
-    X0 = X0.reshape(-1, 20)
-    Y0 = Y0.reshape(-1, 20)
+    # # Reshape training data into window sized batches
+    # X0, Y0 = X0[:-(len(X0) % window_size)], Y0[:-(len(Y0) % window_size)]
+    # X0 = X0.reshape(-1, 20)
+    # Y0 = Y0.reshape(-1, 20)
 
-    # Reshape test data into window sized batches
-    X1, Y1 = X1[:-(len(X1) % window_size)], Y1[:-(len(Y1) % window_size)]
-    X1 = X1.reshape(-1, 20)
-    Y1 = Y1.reshape(-1, 20)
+    # # Reshape test data into window sized batches
+    # X1, Y1 = X1[:-(len(X1) % window_size)], Y1[:-(len(Y1) % window_size)]
+    # X1 = X1.reshape(-1, 20)
+    # Y1 = Y1.reshape(-1, 20)
 
     ## TODO: Get your model that you'd like to use
     args = get_text_model(vocab)
@@ -137,7 +137,7 @@ def main():
     args.model.fit(
         X0, Y0,
         epochs=args.epochs, 
-        batch_size=args.batch_size,
+        batch_size=lp,
         validation_data=(X1, Y1)
     )
 
