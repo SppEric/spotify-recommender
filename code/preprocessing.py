@@ -1,85 +1,98 @@
 import json
 import numpy as np
 import random
+import os
 from collections import defaultdict
 
-
-def preprocess(train_filepath='data_info/data/', test_filepath='data_info/data/', k=10000):
+def preprocess(directory='../data_info/data/', train_test_split=.8, k=None):
 
     '''
     preprocess should return:
         train_data : a 1d list of song ids
         test_data : a 1d list of song ids
         track_to_id : a map of each song name to its id
+        relevance : a dictionary {song : [songs in order of relevance]}
     '''
+    filepaths = os.listdir(directory)
+    if k is not None:
+        filepaths = filepaths[:k]
+
+    assert 0 < train_test_split < 1
+    assert len(filepaths) > 1
+    random.shuffle(filepaths)
+    split = int(len(filepaths) * train_test_split)
+    train_filepaths = filepaths[:split]
+    test_filepaths = filepaths[split:]
 
     # get train data
-    train_file = open(train_filepath)
-    train_data = json.load(train_file)
+    all_train_tracks_name = []
 
-    train_playlists = train_data['playlists']
-    all_train_tracks = []
+    for filepath in train_filepaths:
+        train_file = open(directory + filepath)
+        train_data = json.load(train_file)
+        train_playlists = train_data['playlists']
 
-    # create relevance metrics
-    relevance = defaultdict(lambda: defaultdict(int))
+        for playlist in train_playlists:
+            playlist_tracks = playlist['tracks']
+            track_names = [x['track_name'] for x in playlist_tracks]
+            track_names.append('<BREAK>')
+            all_train_tracks_name = all_train_tracks_name + track_names
 
-    for playlist in train_playlists:
-        playlist_tracks = playlist['tracks']
-        track_names = [x['track_name'] for x in playlist_tracks]
-        # track_names.append('<BREAK>')
-
-        all_train_tracks = all_train_tracks + track_names
-
-    unique_tracks = sorted(set(all_train_tracks))
+    # define our vocabulary
+    unique_tracks = sorted(set(all_train_tracks_name))
     track_to_id = {name: idx for idx, name in enumerate(unique_tracks)}
     id_to_track = {idx: name for idx, name in enumerate(unique_tracks)}
 
-    train_tracks = [track_to_id[x] for x in all_train_tracks]
+    train_tracks_id = [track_to_id[x] for x in all_train_tracks_name]
 
     # get test data, removing songs that are not in our vocabulary
-    test_file = open(test_filepath)
-    test_data = json.load(test_file)
+    all_test_tracks_name = []
 
-    test_playlists = test_data['playlists']
-    all_test_tracks = []
+    for filepath in test_filepaths:
+        test_file = open(directory + filepath)
+        test_data = json.load(test_file)
 
-    for playlist in test_playlists:
-        playlist_tracks = playlist['tracks']
-        track_names = [x['track_name'] for x in playlist_tracks]
-        # extra line here to ensure that our vocab is constrained to the training data
-        track_names = list(filter(lambda x: x in unique_tracks, track_names))
-        # track_names.append('<BREAK>')
-        all_test_tracks = all_test_tracks + track_names
+        test_playlists = test_data['playlists']
 
-    test_tracks = [track_to_id[x] for x in all_test_tracks]
+        for playlist in test_playlists:
+            playlist_tracks = playlist['tracks']
+            track_names = [x['track_name'] for x in playlist_tracks]
+            # extra line here to ensure that our vocab is constrained to the training data
+            track_names = list(filter(lambda x: x in unique_tracks, track_names))
+            track_names.append('<BREAK>')
+            all_test_tracks_name = all_test_tracks_name + track_names
 
-    # print(train_tracks[:10])
-    # print(test_tracks[:10])
-    # print(len(train_tracks), len(test_tracks))
+    test_tracks_id = [track_to_id[x] for x in all_test_tracks_name]
 
-    # generate relevance scores
-    # relevance maps song id --> every song it appears in a playlist with --> number of times they appear together
+
+    # calculate relevance
     relevance = defaultdict(lambda: defaultdict(lambda: 0))
 
-    for playlist in train_playlists:
-        playlist_tracks = playlist['tracks']
-        track_names = [x['track_name'] for x in playlist_tracks]
-        for idx, track1 in enumerate(track_names):
-            id1 = str(track_to_id[track1])
-            for track2 in track_names[idx:]:
-                id2 = str(track_to_id[track2])
-                relevance[id1][id2] += 1
-                relevance[id2][id1] += 1
+    for filepath in filepaths:
+        file = open(directory + filepath)
+        data = json.load(file)
+        playlists = data['playlists']
 
+        for playlist in playlists:
+            playlist_tracks = playlist['tracks']
+            track_names = [x['track_name'] for x in playlist_tracks]
+            track_names = list(filter(lambda x: x in unique_tracks, track_names))
+            track_ids = [track_to_id[x] for x in track_names]
+            for idx, track1 in enumerate(track_ids):
+                for track2 in track_ids[idx:]:
+                    relevance[track1][track2] += 1
+                    relevance[track2][track1] += 1
 
     relevance_output = {}
+
     for song in relevance.keys():
         kv_list = [(k, v) for (k, v) in relevance[song].items()]
         kv_list.sort(key=lambda x: x[1])
         relevance_output[song] = [x[0] for x in kv_list]
 
-    return train_tracks, test_tracks, track_to_id, relevance_output
+
+    return train_tracks_id, test_tracks_id, track_to_id, relevance_output
 
 
 if __name__ == "__main__":
-    preprocess(train_filepath='../data_info/data/mpd.slice.0-999.json', test_filepath='../data_info/data/mpd.slice.1000-1999.json')
+    preprocess(k=2)
