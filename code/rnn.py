@@ -1,6 +1,6 @@
 import tensorflow as tf
 import numpy as np
-from accuracy import SongAccuracy
+from accuracy import RPrecision
 from preprocessing import preprocess
 from types import SimpleNamespace
 
@@ -90,7 +90,7 @@ def get_text_model(vocab):
 
     ## TODO: Define your own loss and metric for your optimizer
     loss_metric = tf.keras.losses.SparseCategoricalCrossentropy()
-    acc_metric  = SongAccuracy()
+    acc_metric  = RPrecision()
 
     ## TODO: Compile your model using your choice of optimizer, loss, and metrics
     model.compile(
