@@ -29,12 +29,12 @@ def preprocess(directory='../data_info/data/', train_test_split=.8, k=None):
 
     #Getting size of largest playlist
     longest_playlist = 0
-    for filepath in train_filepaths:
+    for filepath in train_filepaths+test_filepaths:
         train_file = open(directory + filepath)
         train_data = json.load(train_file)
         train_playlists = train_data['playlists']
         val = len(train_playlists)
-        if val > longest_playlist:
+        if val > longest_playlist: 
             longest_playlist = val
 
     for filepath in train_filepaths:
@@ -48,7 +48,7 @@ def preprocess(directory='../data_info/data/', train_test_split=.8, k=None):
             while len(track_names) < longest_playlist:
                 track_names.append('<PAD>')
             track_names.append('<BREAK>')
-            all_train_tracks_name = all_train_tracks_name + track_names
+            all_train_tracks_name = all_train_tracks_name + '<PAD>' + track_names #all_train_tracks_name = all_train_tracks_name + track_names
 
     # define our vocabulary
     unique_tracks = sorted(set(all_train_tracks_name))
@@ -71,8 +71,10 @@ def preprocess(directory='../data_info/data/', train_test_split=.8, k=None):
             track_names = [x['track_name'] for x in playlist_tracks]
             # extra line here to ensure that our vocab is constrained to the training data
             track_names = list(filter(lambda x: x in unique_tracks, track_names))
+            while len(track_names) < longest_playlist:
+                track_names.append('<PAD>')
             track_names.append('<BREAK>')
-            all_test_tracks_name = all_test_tracks_name + track_names
+            all_test_tracks_name = all_test_tracks_name + '<PAD>' + track_names
 
     test_tracks_id = [track_to_id[x] for x in all_test_tracks_name]
 
@@ -103,7 +105,7 @@ def preprocess(directory='../data_info/data/', train_test_split=.8, k=None):
         relevance_output[song] = [x[0] for x in kv_list]
 
 
-    return train_tracks_id, test_tracks_id, track_to_id, relevance_output, longest_playlist
+    return train_tracks_id, test_tracks_id, track_to_id, relevance_output, longest_playlist+1
 
 
 if __name__ == "__main__":

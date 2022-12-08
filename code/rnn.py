@@ -28,7 +28,7 @@ class MyRNN(tf.keras.Model):
         ## Define an embedding component to embed the word indices into a trainable embedding space.
         ## Define a recurrent component to reason with the sequence of data. 
         ## You may also want a dense layer near the end...    
-        self.embedding = tf.keras.layers.Embedding(self.vocab_size, self.embed_size)
+        self.embedding = tf.keras.layers.Embedding(self.vocab_size, self.embed_size, mask_zero=True) # add mask_zero = true
         self.lstm = tf.keras.layers.LSTM(self.embed_size, return_sequences=True, return_state=False)
         self.model = tf.keras.Sequential(
             [       
