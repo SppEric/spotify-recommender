@@ -6,6 +6,9 @@ from collections import defaultdict
 
 def preprocess(directory='../data_info/data/', train_test_split=.8, k=None):
 
+    pad = True
+    #In ipynb file, use lp as batch size
+    #In rnn, mask_zero=True
     '''
     preprocess should return:
         train_data : a 1d list of song ids
@@ -45,10 +48,13 @@ def preprocess(directory='../data_info/data/', train_test_split=.8, k=None):
         for playlist in train_playlists:
             playlist_tracks = playlist['tracks']
             track_names = [x['track_name'] for x in playlist_tracks]
-            while len(track_names) < longest_playlist:
-                track_names.append('<PAD>')
-            track_names.append('<BREAK>')
-            all_train_tracks_name = all_train_tracks_name + '<PAD>' + track_names #all_train_tracks_name = all_train_tracks_name + track_names
+            if pad:
+                while len(track_names) < longest_playlist:
+                    track_names.append('<PAD>')
+                all_train_tracks_name = all_train_tracks_name + ['<PAD>'] + track_names
+            else:
+                track_names.append('<BREAK>')
+                all_train_tracks_name = all_train_tracks_name + track_names
 
     # define our vocabulary
     unique_tracks = sorted(set(all_train_tracks_name))
@@ -71,10 +77,13 @@ def preprocess(directory='../data_info/data/', train_test_split=.8, k=None):
             track_names = [x['track_name'] for x in playlist_tracks]
             # extra line here to ensure that our vocab is constrained to the training data
             track_names = list(filter(lambda x: x in unique_tracks, track_names))
-            while len(track_names) < longest_playlist:
-                track_names.append('<PAD>')
-            track_names.append('<BREAK>')
-            all_test_tracks_name = all_test_tracks_name + '<PAD>' + track_names
+            if pad:
+                while len(track_names) < longest_playlist:
+                    track_names.append('<PAD>')
+                all_test_tracks_name = all_test_tracks_name + ['<PAD>'] + track_names
+            else:
+                track_names.append('<BREAK>')
+                all_test_tracks_name = all_test_tracks_name + track_names
 
     test_tracks_id = [track_to_id[x] for x in all_test_tracks_name]
 
