@@ -32,7 +32,7 @@ class MyRNN(tf.keras.Model):
         self.lstm = tf.keras.layers.LSTM(self.embed_size, return_sequences=True, return_state=False)
         self.model = tf.keras.Sequential(
             [       
-                tf.keras.layers.Dense(10 * self.embed_size, activation='relu'),
+                tf.keras.layers.Dense(10 * self.embed_size, activation=tf.keras.layers.LeakyReLU()),  #nn
                 tf.keras.layers.Dense(self.vocab_size, activation='softmax')
             ]
         )
