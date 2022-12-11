@@ -1,16 +1,15 @@
 import tensorflow as tf
 import numpy as np
-from accuracy import SongAccuracy #, RPrecision
 from preprocessing import preprocess
 from types import SimpleNamespace
 
-window_size = 2-
 
-class MyRNN(tf.keras.Model):
+
+class Model(tf.keras.Model):
 
     ##########################################################################################
 
-    def __init__(self, vocab_size, rnn_size=128, embed_size=64):
+    def __init__(self, vocab_size, rnn_size=256, embed_size=300):
         """
         The Model class predicts the next words in a sequence.
         : param vocab_size : The number of unique words in the data
@@ -23,10 +22,7 @@ class MyRNN(tf.keras.Model):
         self.rnn_size = rnn_size
         self.embed_size = embed_size
 
-        ## TODO: Finish off the method as necessary.
-        ## Define an embedding component to embed the word indices into a trainable embedding space.
-        ## Define a recurrent component to reason with the sequence of data. 
-        ## You may also want a dense layer near the end...    
+
         self.embedding = tf.keras.layers.Embedding(self.vocab_size, self.embed_size, mask_zero=True)
         self.lstm = tf.keras.layers.LSTM(self.embed_size, return_sequences=True, return_state=False)
         self.model = tf.keras.Sequential(
@@ -38,11 +34,6 @@ class MyRNN(tf.keras.Model):
         )
 
     def call(self, inputs):
-        """
-        - You must use an embedding layer as the first layer of your network (i.e. tf.nn.embedding_lookup)
-        - You must use an LSTM or GRU as the next layer.
-        """
-        ## TODO: Implement the method as necessary
         x = self.embedding(inputs)  
         x = self.lstm(x)
         
@@ -75,11 +66,8 @@ class MyRNN(tf.keras.Model):
 #########################################################################################
 
 def get_text_model(vocab, relevance):
-    '''
-    Tell our autograder how to train and test your model!
-    '''
 
-    model = MyRNN(len(vocab))
+    model = Model(len(vocab))
 
     loss_metric = tf.keras.losses.SparseCategoricalCrossentropy()
 
@@ -129,7 +117,6 @@ def main():
     X0, Y0 = train_id, train_id
     X1, Y1 = test_id,  test_id
 
-    ## TODO: Get your model that you'd like to use
     args = get_text_model(vocab, relevance)
 
     data = args.model.fit(
@@ -141,16 +128,13 @@ def main():
 
     def RPrecision(predictions, labels):
         PAD_TOKEN = 0
-        #print(prediction_arr)
         predict_set = set(predictions)
         labels = labels[:len(predict_set)]
         
         ground_truth = set(labels)
 
-        # Return mean of running total to get running mean
         return len(predict_set.intersection(ground_truth)) / len(ground_truth)
 
-    ## Feel free to mess around with the word list to see the model try to generate sentences
     for word1 in ['Closer']:
         if word1 not in vocab: print(f"{word1} not in vocabulary")            
         else: print(args.model.generate_recommendations(word1, 10, vocab))
