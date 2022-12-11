@@ -6,7 +6,11 @@ from collections import defaultdict
 
 def preprocess(directory='../data_info/data/', train_test_split=.8, k=None):
 
+<<<<<<< HEAD
     pad = True
+=======
+    pad = False
+>>>>>>> main
     #In ipynb file, use lp as batch size
     #In rnn, mask_zero=True
     '''
@@ -51,7 +55,11 @@ def preprocess(directory='../data_info/data/', train_test_split=.8, k=None):
             if pad:
                 while len(track_names) < longest_playlist:
                     track_names.append('<PAD>')
+<<<<<<< HEAD
                 all_train_tracks_name = all_train_tracks_name + ['<PAD>'] + track_names
+=======
+                all_train_tracks_name = all_train_tracks_name + track_names
+>>>>>>> main
             else:
                 track_names.append('<BREAK>')
                 all_train_tracks_name = all_train_tracks_name + track_names
@@ -59,6 +67,18 @@ def preprocess(directory='../data_info/data/', train_test_split=.8, k=None):
     # define our vocabulary
     unique_tracks = sorted(set(all_train_tracks_name))
     track_to_id = {name: idx for idx, name in enumerate(unique_tracks)}
+
+    if pad:
+        # Swap 0 key with PAD token
+        zeroth_song = track_to_id[list(track_to_id.keys())[0]]
+        
+        track_to_id['<PAD>'], zeroth_song = zeroth_song, track_to_id['<PAD>']
+    else:
+        # Swap 0 key with PAD token
+        zeroth_song = track_to_id[list(track_to_id.keys())[0]]
+        
+        track_to_id['<BREAK>'], zeroth_song = zeroth_song, track_to_id['<BREAK>']
+
     id_to_track = {idx: name for idx, name in enumerate(unique_tracks)}
 
     train_tracks_id = [track_to_id[x] for x in all_train_tracks_name]
@@ -80,7 +100,11 @@ def preprocess(directory='../data_info/data/', train_test_split=.8, k=None):
             if pad:
                 while len(track_names) < longest_playlist:
                     track_names.append('<PAD>')
+<<<<<<< HEAD
                 all_test_tracks_name = all_test_tracks_name + ['<PAD>'] + track_names
+=======
+                all_test_tracks_name = all_test_tracks_name + track_names
+>>>>>>> main
             else:
                 track_names.append('<BREAK>')
                 all_test_tracks_name = all_test_tracks_name + track_names
@@ -110,12 +134,52 @@ def preprocess(directory='../data_info/data/', train_test_split=.8, k=None):
 
     for song in relevance.keys():
         kv_list = [(k, v) for (k, v) in relevance[song].items()]
-        kv_list.sort(key=lambda x: x[1])
+        kv_list.sort(key=lambda x: x[1], reverse=True)
         relevance_output[song] = [x[0] for x in kv_list]
 
 
     return train_tracks_id, test_tracks_id, track_to_id, relevance_output, longest_playlist+1
+<<<<<<< HEAD
+=======
 
+
+def save_data(train, test, track_to_id, relevance, directory='../data_info/saved_preprocessing'):
+    if os.path.exists(directory) and os.path.isdir(directory):
+        shutil.rmtree(directory)
+
+    os.mkdir(directory)
+
+    np.savetxt(directory + '/train.txt', train, delimiter=',')
+    np.savetxt(directory + '/test.txt', test, delimiter=',')
+>>>>>>> main
+
+    with open(directory + "/track_to_id.json", "w") as outfile:
+        json.dump(track_to_id, outfile)
+
+    with open(directory + "/relevance.json", "w") as outfile:
+        json.dump(relevance, outfile)
+
+def get_data(directory, k=None):
+    if os.path.exists(directory) and os.path.isdir(directory):
+        train = np.genfromtxt(directory + '/train.txt', dtype=np.int32, delimiter=',')
+        test = np.genfromtxt(directory + '/test.txt', dtype=np.int32, delimiter=',')
+
+        with open(directory + '/track_to_id.json') as json_file:
+            track_to_id = json.load(json_file)
+
+        with open(directory + '/relevance.json') as json_file:
+            relevance = json.load(json_file)
+
+        return train, test, track_to_id, relevance
+
+    return preprocess(directory='../data_info/data', k=k)
+
+
+if __name__ == "__main__":
+    # train, test, track, relevance = preprocess(k=100)
+    preprocess(train_test_split=.9, k=100)
+    # save_data(train, test, track, relevance)
+    # get_data('../data_info/saved_preprocessing')
 
 if __name__ == "__main__":
     preprocess(k=2)
