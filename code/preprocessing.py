@@ -162,6 +162,6 @@ def get_data(directory, k=None):
 
 if __name__ == "__main__":
     # train, test, track, relevance = preprocess(k=100)
-    preprocess(train_test_split=.9, k=100)
+    preprocess(train_test_split=.8, k=5)
     # save_data(train, test, track, relevance)
     # get_data('../data_info/saved_preprocessing')
