@@ -3,9 +3,13 @@ import numpy as np
 from preprocessing import preprocess
 from types import SimpleNamespace
 
+<<<<<<< HEAD
 
 
 class Model(tf.keras.Model):
+=======
+class MyRNN(tf.keras.Model):
+>>>>>>> 31bb707 (Refactoring)
 
     ##########################################################################################
 
@@ -78,9 +82,9 @@ def get_text_model(vocab, relevance):
         # Set up prediction array
         prediction_arr = predictions.numpy().flatten().astype(int)
         input_song = labels.numpy().flatten().astype(int)[0]
-        #print(prediction_arr)
-        prediction_arr = prediction_arr[prediction_arr != PAD_TOKEN]
+        
 
+        prediction_arr = prediction_arr[prediction_arr != PAD_TOKEN]
         predict_set = set(prediction_arr)
         relevant_songs = relevance[input_song]
         relevant_songs = relevant_songs[:len(prediction_arr)]
