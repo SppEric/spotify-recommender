@@ -3,14 +3,7 @@ import numpy as np
 from preprocessing import preprocess
 from types import SimpleNamespace
 
-<<<<<<< HEAD
-
-
 class Model(tf.keras.Model):
-=======
-class MyRNN(tf.keras.Model):
->>>>>>> 31bb707 (Refactoring)
-
     ##########################################################################################
 
     def __init__(self, vocab_size, rnn_size=256, embed_size=300):
@@ -69,7 +62,7 @@ class MyRNN(tf.keras.Model):
 
 #########################################################################################
 
-def get_text_model(vocab, relevance):
+def get_model(vocab, relevance):
 
     model = Model(len(vocab))
 
@@ -121,7 +114,7 @@ def main():
     X0, Y0 = train_id, train_id
     X1, Y1 = test_id,  test_id
 
-    args = get_text_model(vocab, relevance)
+    args = get_model(vocab, relevance)
 
     data = args.model.fit(
         X0, Y0,
